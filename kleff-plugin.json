@@ -1,0 +1,61 @@
+{
+  "id": "influxdb-plugin",
+  "name": "InfluxDB",
+  "type": "observability",
+  "tier": 2,
+  "description": "Time-series metrics backend. Stores metrics from Alloy via Prometheus remote write.",
+  "longDescription": "Deploys InfluxDB 3 Core as a time-series metrics backend. Alloy writes metrics via the Prometheus remote write endpoint. Query data using InfluxQL or SQL in the InfluxDB UI at http://localhost:8181.",
+  "tags": ["observability", "metrics", "influxdb", "timeseries"],
+  "capabilities": ["monitoring.metrics"],
+  "author": "Kleff",
+  "repo": "https://github.com/influxdata/influxdb",
+  "image": "",
+  "version": "3",
+  "license": "MIT",
+  "verified": true,
+  "output": {
+    "protocol": "remote_write",
+    "path": "/api/v1/prom/write?db=${INFLUXDB_DATABASE}",
+    "bearerToken": "${INFLUXDB_TOKEN}"
+  },
+  "companions": [
+    {
+      "id": "influxdb",
+      "image": "influxdb:3-core",
+      "command": ["influxdb3", "serve", "--node-id=node0", "--object-store=file", "--data-dir=/var/lib/influxdb3/data"],
+      "env": {
+        "INFLUXDB3_AUTH_TOKEN": "${INFLUXDB_TOKEN}"
+      },
+      "ports": [{ "container": 8181, "host": 8181 }],
+      "volumes": [{ "name": "kleff-influxdb-data", "target": "/var/lib/influxdb3/data" }],
+      "internalAddr": "http://influxdb:8181",
+      "skipIfEnv": "INFLUXDB_URL"
+    }
+  ],
+  "config": [
+    {
+      "key": "INFLUXDB_DATABASE",
+      "label": "Database",
+      "description": "InfluxDB database name. Created automatically on first write.",
+      "type": "string",
+      "required": true,
+      "default": "metrics"
+    },
+    {
+      "key": "INFLUXDB_TOKEN",
+      "label": "Admin Token",
+      "description": "InfluxDB admin token used by Alloy to write metrics. Set this to a strong secret.",
+      "type": "secret",
+      "required": true,
+      "default": "kleff-influxdb-token"
+    },
+    {
+      "key": "INFLUXDB_URL",
+      "label": "External InfluxDB URL",
+      "description": "Override to use an external InfluxDB 3 instance. Leave blank to use the bundled companion.",
+      "type": "url",
+      "required": false,
+      "advanced": true
+    }
+  ]
+}
